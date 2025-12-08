@@ -471,4 +471,10 @@ public class MagneticGun : MonoBehaviour
 	{
 		return !lockBlueOnly;
 	}
+
+	// Query if the gun is currently equipped and active
+	public bool IsEquipped()
+	{
+		return isEquipped;
+	}
 }

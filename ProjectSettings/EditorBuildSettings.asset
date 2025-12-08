@@ -18,7 +18,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Levels/Level3.unity
     guid: dc7f547610489d540ac9007e1f4b9952
   - enabled: 0
-    path: Assets/Scenes/GravityField/GravityField.unity
+    path: Assets/Scenes/Test Scenes/GravityField/GravityField.unity
     guid: 344fe2b0468434ef9aece67e1a38d007
   - enabled: 1
     path: Assets/Scenes/Levels/Level4/Level4_demo.unity

@@ -337,24 +337,33 @@ public class KeybindDisplayPanel : MonoBehaviour
             case ": Red Mode":
             case ": Blue Mode":
             case ": Magnetic Lock":
-                if (magneticGun == null)
-                    magneticGun = FindObjectOfType<MagneticGun>();
+                // Always re-find the MagneticGun in case it was destroyed/recreated or unlocked
+                magneticGun = FindObjectOfType<MagneticGun>();
 
-                if (magneticGun != null)
+                if (magneticGun != null && playerController != null)
                 {
-                    keybind.isAvailable = playerController.IsPickMode();
+                    // Only show magnetic gun keybinds when the magnetic gun is CURRENTLY EQUIPPED
+                    // (not just in Pick mode, but specifically holding the magnetic gun)
+                    bool isMagneticGunEquipped = IsMagneticGunCurrentlyEquipped();
+                    keybind.isAvailable = playerController.IsPickMode() && isMagneticGunEquipped;
 
-                    // Red mode is unavailable (hidden) when locked
+                    // Red mode: also check if switch is unlocked
                     if (keybind.actionName == ": Red Mode")
                     {
-                        keybind.isLocked = magneticGun.lockBlueOnly;
-                        // Hide when locked - only show after unlocked
-                        keybind.isAvailable = keybind.isAvailable && !keybind.isLocked;
+                        // Use IsSwitchUnlocked() to check current unlock state
+                        bool isUnlocked = magneticGun.IsSwitchUnlocked();
+                        keybind.isLocked = !isUnlocked;
+                        // Hide when locked - only show after unlocked AND magnetic gun is equipped
+                        keybind.isAvailable = keybind.isAvailable && isUnlocked;
                     }
                     else if (keybind.actionName == ": Blue Mode")
                     {
                         keybind.isLocked = false;
                     }
+                }
+                else
+                {
+                    keybind.isAvailable = false;
                 }
                 break;
 
@@ -481,5 +490,19 @@ public class KeybindDisplayPanel : MonoBehaviour
         {
             panelCanvasGroup.alpha = visible ? 1f : 0f;
         }
+    }
+
+    /// <summary>
+    /// Check if the Magnetic Gun is currently equipped (not just in inventory, but actively held)
+    /// </summary>
+    bool IsMagneticGunCurrentlyEquipped()
+    {
+        // Check if magneticGun exists and is equipped
+        if (magneticGun != null)
+        {
+            // Use MagneticGun's own IsEquipped() method for accurate state
+            return magneticGun.IsEquipped();
+        }
+        return false;
     }
 }
