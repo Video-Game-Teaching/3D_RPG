@@ -36,16 +36,23 @@ public class KeybindDisplayPanel : MonoBehaviour
     public GameObject keybindItemPrefab;
     public Transform contentContainer;          // Container for keybind items
     public CanvasGroup panelCanvasGroup;        // for showing/hiding the panel
+    public RectTransform panelRectTransform;    // Panel RectTransform for height adjustment
 
     [Header("Display Settings")]
-    public bool showOnlyAvailable = false;
+    public bool showOnlyAvailable = true;  // Only show available keys, hide locked/unavailable
     public bool groupByCategory = true;
     public float updateInterval = 0.2f;
 
+    [Header("Panel Auto-Resize")]
+    public bool autoResizePanel = true;         // Enable auto panel height adjustment
+    public float titleHeight = 30f;             // Height reserved for panel title
+    public float itemHeight = 25f;              // Height of each keybind item
+    public float itemSpacing = 5f;              // Spacing between items
+    public float paddingVertical = 10f;         // Top and bottom padding
+    public float minPanelHeight = 50f;          // Minimum panel height
+
     [Header("Colors")]
     public Color availableColor = Color.green;
-    public Color lockedColor = Color.gray;
-    public Color unavailableColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);
 
     // Internal state
     private List<KeybindInfo> allKeybinds = new List<KeybindInfo>();
@@ -166,17 +173,17 @@ public class KeybindDisplayPanel : MonoBehaviour
         {
             switch (actionName)
             {
-                case ": Red Mode":
-                case ": Blue Mode":
-                case ": Magnetic Lock":
+                case ": Pick Up Items(small)":      // F key - pick up magnetic gun/keys
+                case ": Red Mode":                  // Q key - switch to red mode (may be locked initially)
+                case ": Blue Mode":                 // E key - switch to blue mode
+                case ": Magnetic Lock":             // Mouse Button 1 - magnetic lock
+                case ": Next Item":                 // R key - switch between items
+                case ": Previous Item":             // T key - switch between items
                     return true;
-                case ": Pick Up Items(small)":
-                case ": Grab Objects(big)":
-                case ": Place Object":
+                case ": Grab Objects(big)":         // Mouse Button 1 grab - NOT used in Level 5
+                case ": Place Object":              // Mouse Button 2 - NOT used in Level 5
                 case ": Interact with Pedestals":
-                case ": Next Item":
-                case ": Previous Item":
-                    return false; // Not needed in Level 5
+                    return false;
                 default:
                     return false;
             }
@@ -337,20 +344,20 @@ public class KeybindDisplayPanel : MonoBehaviour
                 {
                     keybind.isAvailable = playerController.IsPickMode();
 
-                    // Check unlock conditions for mode switching
+                    // Red mode is unavailable (hidden) when locked
                     if (keybind.actionName == ": Red Mode")
                     {
-                        // Red mode is locked when lockBlueOnly is enabled
                         keybind.isLocked = magneticGun.lockBlueOnly;
+                        // Hide when locked - only show after unlocked
                         keybind.isAvailable = keybind.isAvailable && !keybind.isLocked;
                     }
                     else if (keybind.actionName == ": Blue Mode")
                     {
-                        // Blue mode is always available when magnetic gun is equipped
                         keybind.isLocked = false;
                     }
                 }
                 break;
+
 
             //---------------Special Abilities
             case ": Gravity Direction":
@@ -394,6 +401,8 @@ public class KeybindDisplayPanel : MonoBehaviour
 
     void UpdateDisplay()
     {
+        int visibleCount = 0;
+
         foreach (var kvp in keybindUIObjects)
         {
             KeybindInfo keybind = kvp.Key;
@@ -406,34 +415,57 @@ public class KeybindDisplayPanel : MonoBehaviour
                 continue;
             }
 
+            // Only show available keybinds (hide locked/unavailable)
             bool shouldShow = !showOnlyAvailable || keybind.isAvailable;
             uiObject.SetActive(shouldShow);
 
             if (!shouldShow)
                 continue;
 
-            // color & text update
-            Color targetColor = availableColor;
-            if (keybind.isLocked)
-                targetColor = lockedColor;
-            else if (!keybind.isAvailable)
-                targetColor = unavailableColor;
+            visibleCount++;
 
+            // All visible keybinds are available - show in green
             TextMeshProUGUI[] texts = uiObject.GetComponentsInChildren<TextMeshProUGUI>();
             foreach (var text in texts)
             {
-                text.color = targetColor;
+                text.color = availableColor;
             }
-            if (keybind.isLocked && texts.Length >= 2)
-            {
-                texts[1].text = keybind.actionName + " (Locked) ";
-            }
-            else if (texts.Length >= 2)
+            if (texts.Length >= 2)
             {
                 texts[1].text = keybind.actionName;
             }
         }
+
+        // Adjust panel height based on visible items
+        UpdatePanelHeight(visibleCount);
     }
+
+    /// <summary>
+    /// Adjust panel height based on number of visible keybind items
+    /// </summary>
+    void UpdatePanelHeight(int visibleItemCount)
+    {
+        if (!autoResizePanel || panelRectTransform == null)
+            return;
+
+        // Calculate content height: title + (items * itemHeight) + ((items-1) * spacing) + padding
+        float contentHeight = titleHeight + paddingVertical * 2;
+        
+        if (visibleItemCount > 0)
+        {
+            contentHeight += visibleItemCount * itemHeight;
+            contentHeight += (visibleItemCount - 1) * itemSpacing;
+        }
+
+        // Apply minimum height
+        float finalHeight = Mathf.Max(contentHeight, minPanelHeight);
+
+        // Update panel size
+        Vector2 sizeDelta = panelRectTransform.sizeDelta;
+        sizeDelta.y = finalHeight;
+        panelRectTransform.sizeDelta = sizeDelta;
+    }
+
 
     public void TogglePanel()
     {
