@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/StarterAssets/Editor.meta
+guid: 71c2d45c4b71c5d4a957dda524966396
+========
+guid: 2b32f7e1b27c6484a8484fc77a269e86
+>>>>>>>> e0228956dc2df735526c339f7cda99ea999d8e00:Assets/Scripts/grab_item.meta
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
